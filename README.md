@@ -7,4 +7,7 @@ cd exgboost_bootstrap
 mix ecto.create
 mix phx.server
 
+# Data comes from https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud
+
+
 
