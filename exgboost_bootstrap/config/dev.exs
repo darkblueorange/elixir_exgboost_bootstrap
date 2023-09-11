@@ -2,8 +2,8 @@ import Config
 
 # Configure your database
 config :exgboost_bootstrap, ExgboostBootstrap.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "admin",
+  password: "postgres_passwd",
   hostname: "localhost",
   database: "exgboost_bootstrap_dev",
   stacktrace: true,

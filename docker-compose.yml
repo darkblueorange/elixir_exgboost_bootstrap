@@ -1,0 +1,26 @@
+version: '3.7'
+
+x-postgres-variables:
+  &postgres-variables
+  TZ: Europe/Paris
+  POSTGRES_USER: admin
+  POSTGRES_PASSWORD: postgres_passwd
+
+
+services:
+  mvp-postgres:
+    hostname: "mvp-postgres"
+    image: postgres:13.3
+    container_name: postgres_container
+    environment:
+      <<: *postgres-variables
+    ports:
+      - "5432:5432"
+    restart: on-failure
+    command:
+      - "postgres"
+      - "-cmax_connections=200"
+    volumes:
+      - "${PWD}/postgres_repo/postgres-data:/var/lib/postgresql/data"
+
+
