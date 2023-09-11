@@ -34,7 +34,8 @@ defmodule ExgboostBootstrap.MixProject do
     [
       {:ecto_sql, "~> 3.10"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
-      {:exgboost, "~> 0.2"},
+      {:exgboost, "~> 0.3.1"},
+      {:explorer, "~> 0.5"},
       {:finch, "~> 0.13"},
       {:floki, ">= 0.30.0", only: :test},
       {:gettext, "~> 0.20"},
