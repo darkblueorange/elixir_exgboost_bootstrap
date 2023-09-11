@@ -4,6 +4,8 @@
 docker-compose up -d
 cd exgboost_bootstrap
 
+mix deps.get
+mix deps.compile
 mix ecto.create
 mix phx.server
 
