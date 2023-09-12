@@ -1,5 +1,8 @@
 # elixir_exgboost_bootstrap
 
+Don't forget to retrieve the dataset with git lfs (or download it directly with the link at the end of the this README. 
+
+
 ```zsh
 docker-compose up -d
 cd exgboost_bootstrap
