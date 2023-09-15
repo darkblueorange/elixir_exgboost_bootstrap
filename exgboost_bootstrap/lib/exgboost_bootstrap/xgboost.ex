@@ -21,6 +21,15 @@ defmodule MlXgboost do
     Explorer.DataFrame.from_csv!(path, dtypes: [{"Time", :float}])
   end
 
+  def cast_df(df) do
+    df
+    |> DF.mutate(
+      for col <- across() do
+        {col.name, Explorer.Series.cast(col, :integer)}
+      end
+    )
+  end
+
   @doc """
   Needs a Dataframe.
   Split it into train (80%) and test (20%) and return it as a tuple.
@@ -154,20 +163,26 @@ defmodule MlXgboost do
       y_train,
       obj: :binary_logistic,
       evals: [{x_test, y_test, "test"}],
-      max_depth: 0,
       tree_method: :approx,
       learning_rates: fn i -> i / 100 end,
       num_boost_round: 10,
       early_stopping_rounds: 3,
-      params: [max_depth: 3, eval_metric: ["error", "roc", "auc"]]
+      max_depth: 3,
+      eval_metric: [:error, :auc]
     )
+  end
+
+  # (ArgumentError) Parameter `eval_metric` must be in [:rmse, :mae, :logloss, :error, :error, :merror, :mlogloss, :auc, :aucpr, :ndcg, :map, :ndcg, :map, :ndcg, :map, :poisson_nloglik, :gamma_nloglik, :gamma_deviance, :tweedie_nloglik, :tweedie_deviance], got :roc
+
+  def erlang_garbage_collect() do
+    :erlang.garbage_collect()
   end
 
   @doc """
   returns y_pred
   """
-  def predict(model, x_test) do
-    EXGBoost.predict(model, x_test)
+  def predict(model, y_test) do
+    EXGBoost.predict(model, y_test)
   end
 
   @doc """
@@ -239,13 +254,13 @@ defmodule MlXgboost do
 
     {x_train, y_train, x_test, y_test} =
       df
+      |> cast_df()
       |> split_train_test(dataset_limit, reverse_shrink)
       |> stack_to_nx()
 
     model = x_train |> build_model(y_train, {x_test, y_test})
 
-    y_pred =
-      EXGBoost.predict(model, x_test)
+    y_pred = model |> predict(y_test)
 
     y_test |> measure_abs_error(y_pred)
   end

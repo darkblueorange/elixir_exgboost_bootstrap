@@ -19,7 +19,7 @@ defmodule ExgboostBootstrap.MixProject do
   def application do
     [
       mod: {ExgboostBootstrap.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :os_mon, :observer, :wx, :debugger]
     ]
   end
 
