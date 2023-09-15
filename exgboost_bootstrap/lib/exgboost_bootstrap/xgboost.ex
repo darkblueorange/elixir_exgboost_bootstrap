@@ -1,5 +1,6 @@
 defmodule MlXgboost do
   require Explorer.DataFrame, as: DF
+  require IEx
 
   @credit_cards_path "../dataset/creditcard.csv"
   # @credit_cards_path "/Users/olivierdeprez/Library/CloudStorage/OneDrive-Personnel/Boulot/7lieues/PRODUCT/Technical_stuff/Code/sources/livebook_fun/datasets/creditcard.csv"
@@ -174,15 +175,33 @@ defmodule MlXgboost do
 
   # (ArgumentError) Parameter `eval_metric` must be in [:rmse, :mae, :logloss, :error, :error, :merror, :mlogloss, :auc, :aucpr, :ndcg, :map, :ndcg, :map, :ndcg, :map, :poisson_nloglik, :gamma_nloglik, :gamma_deviance, :tweedie_nloglik, :tweedie_deviance], got :roc
 
-  def erlang_garbage_collect() do
-    :erlang.garbage_collect()
-  end
-
   @doc """
   returns y_pred
   """
   def predict(model, y_test) do
-    EXGBoost.predict(model, y_test)
+    :memsup.get_memory_data() |> IO.inspect(label: ":memsup.get_memory_data")
+
+    :memsup.get_procmem_high_watermark()
+    |> IO.inspect(label: ":memsup.get_procmem_high_watermark")
+
+    # :etop.start([node: :'server@192.168.1.26', setcookie: 'mycookie'])
+    # :erlang.memory()
+    # |> IO.inspect(label: ":erlang.memory")
+    # :memsup.set_procmem_high_watermark(15.0)
+    # :memsup.get_procmem_high_watermark()
+    # |> IO.inspect(label: ":memsup.get_procmem_high_watermark")
+    # :int.
+    y_pred =
+      EXGBoost.predict(model, y_test, training: true)
+
+    # IEx.pry()
+
+    :memsup.get_memory_data() |> IO.inspect(label: "[after] :memsup.get_memory_data")
+
+    :memsup.get_procmem_high_watermark()
+    |> IO.inspect(label: "[after] :memsup.get_procmem_high_watermark")
+
+    y_pred
   end
 
   @doc """
@@ -249,19 +268,65 @@ defmodule MlXgboost do
   zsh: bus error  iex -S mix phx.server
 
   """
-  def run(dataset_limit \\ 208_600, reverse_shrink \\ false) do
+  def run(dataset_limit \\ 208_600, rand_test_train \\ false, reverse_shrink \\ false) do
     df = load()
 
     {x_train, y_train, x_test, y_test} =
-      df
-      |> cast_df()
-      |> split_train_test(dataset_limit, reverse_shrink)
-      |> stack_to_nx()
+      rand_test_train
+      |> if do
+        rand_train_test(false)
+      else
+        df
+        |> cast_df()
+        |> split_train_test(dataset_limit, reverse_shrink)
+        |> stack_to_nx()
+      end
 
     model = x_train |> build_model(y_train, {x_test, y_test})
 
     y_pred = model |> predict(y_test)
 
     y_test |> measure_abs_error(y_pred)
+  end
+
+  # {x_train, y_train, x_test, y_test}
+  # x_train: s64[166881][30]
+  # y_train : s64[166881][1]
+  # x_test : s64[41720][30]
+  # y_test : s64[41720][1]
+
+  def rand_train_test(rand_or \\ true) do
+    rand_or
+    |> if do
+      x_train = rand_nx_init()
+      y_train = rand_nx_init({166_881, 1})
+
+      y_test = rand_nx_init({41720, 1})
+      x_test = rand_nx_init({41720, 30})
+      # too long, we should use Nx.concatenate() from rand_nx_init({41720, 1})
+      {x_train, y_train, x_test, y_test}
+    else
+      x_train = unrand_nx_init()
+      y_train = unrand_nx_init(166_881)
+
+      x_test = unrand_nx_init(41720)
+      y_test = unrand_nx_init(41720)
+      {x_train, y_train, x_test, y_test}
+    end
+  end
+
+  #   key = Nx.Random.key(10)
+  # {shuffled, _new_key} = Nx.Random.shuffle(key, Nx.iota({3, 4}, axis: 1), independent: true, axis: 1)
+  # shuffled
+
+  defp rand_nx_init(shape \\ {166_881, 30}, seed \\ 1701) do
+    Nx.Random.key(seed)
+    |> Nx.Random.randint(1, 100, shape: shape, type: :s64)
+    |> elem(0)
+  end
+
+  defp unrand_nx_init(shape \\ {166_881, 30}) do
+    Nx.broadcast(1, shape)
+    |> Nx.as_type(:s64)
   end
 end
